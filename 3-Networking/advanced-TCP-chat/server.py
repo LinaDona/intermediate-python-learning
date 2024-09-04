@@ -10,6 +10,8 @@ server.listen()
 
 clients = []
 nicknames = []
+banned = []
+
 
 # helper function to broadcast meassages to users
 def broadcast(message):
@@ -33,6 +35,18 @@ def kick_user(nickname):
         kicked_client.close()
         broadcast(f"{nickname} was kicked by an admin".encode('ascii'))
 
+def ban_user(nickname):
+    if nickname in nicknames:
+        index = nicknames.index(nickname)
+        banned_client = clients[index]
+        banned_client.send("You were banned by an admin.".encode('ascii'))
+        if banned_client in clients:
+            clients.remove(banned_client)
+        nicknames.remove(nickname)
+        banned.append(nickname)
+        banned_client.close()
+        broadcast(f"{nickname} was banned by an admin".encode('ascii'))
+
 def handle_client(client):
     # get index of client
     client_index = clients.index(client)
@@ -53,7 +67,7 @@ def handle_client(client):
                             kick_user(words[2])
 
                         elif words[1] == "/ban":
-                            pass
+                            ban_user(words[2])
 
                         else:
                             client.send("Not a valid command.".encode('ascii'))
@@ -107,6 +121,10 @@ def receive():
                 client.send("Password for ADMIN is wrong!".encode('ascii'))
                 client.close()
                 continue
+        if nickname in banned:
+            client.send("You are banned from this server.".encode('ascii'))
+            client.close()
+            continue
 
         nicknames.append(nickname)
         clients.append(client)
